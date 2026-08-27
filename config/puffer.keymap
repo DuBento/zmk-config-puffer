@@ -83,8 +83,19 @@ ZMK_COMBO(paste, &kp LC(V), LM1 LT1, DEF NUM, COMBO_TERM_SLOW)
         bindings = <BINDING1>, <BINDING2>; \
     )
 
-// tap: space | shift + tap: tab | hold: Num layer
-MAKE_SIMPLE_MORPH(spc_tab_num, SFT, &lt NUM SPACE, &kp TAB)
+// tap: space | shift + tap: tab
+MAKE_SIMPLE_MORPH(spc_tab, SFT, &kp SPACE, &kp TAB)
+
+// Hold: layer | Tap: custom behavior (mod-morph)
+#define MAKE_LT_MORPH(NAME, TAP_BEHAVIOR) \
+    ZMK_HOLD_TAP(NAME, \
+        flavor = "balanced"; \
+        tapping-term-ms = <200>; \
+        quick-tap-ms = <QUICK_TAP_MS>; \
+        bindings = <&mo>, <TAP_BEHAVIOR>; \
+    )
+
+MAKE_LT_MORPH(lt_num_spctab, &spc_tab)
 
 // tap: semicolon | shift + tap: colon
 MAKE_SIMPLE_MORPH(semi_colon, SFT, &kp SEMI, &kp COLON)
@@ -149,7 +160,7 @@ ZMK_LAYER(Qwerty,
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
         &kp Z        &kp X         &kp C         &kp V         &kp B             &kp N         &kp M       &comma_dquot   &dot_squot   &slash_qmark
 // ╰─────────────┴─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┴─────────────╯
-                            &mod_esctil LGUI 0 &mt LCTRL TAB &spc_tab_num      &lt NAV BSPC &mt RSHFT ENTER &mod_delcaps RALT 0
+                            &mod_esctil LGUI 0 &mt LCTRL TAB &lt_num_spctab NUM 0      &lt NAV BSPC &mt RSHFT ENTER &mod_delcaps RALT 0
 //                             ╰─────────────┴─────────────┴─────────────╯   ╰─────────────┴─────────────┴─────────────╯
 )
 
