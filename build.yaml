@@ -13,7 +13,7 @@
 #
 ---
 include:
-  - board: nrfmicro/nrf52840/zmk
+  - board: nice_nano//zmk
     shield: puffer_left
-  - board: nrfmicro/nrf52840/zmk
+  - board: nice_nano//zmk
     shield: puffer_right
