@@ -13,6 +13,9 @@
 #define NUM 1
 #define NAV 2
 #define SYS 3
+#define MAC 4  // toggled on top of DEF; only swaps the editing combos Ctrl -> Cmd
+
+#define BASE_LAYERS DEF MAC  // layers where "normal typing" combos are active
 
 #define XXX &none
 #define ___ &trans
@@ -25,15 +28,6 @@
 
 // ---------- SETTINGS ----------
 
-&sk {  // sticky-key config
-    release-after-ms = <1000>; // release after 1s
-    quick-release;             // no double capitalization when rolling keys
-};
-
-&sl {  // sticky-layer config
-    ignore-modifiers;          // allow chording sticky mods & layers
-};
-
 &lt {  // layer-tap config
     flavor = "balanced";
     tapping-term-ms = <200>;
@@ -41,38 +35,64 @@
 };
 
 // ----------- COMBOS -----------
-#define COMBO_TERM_FAST 25
-#define COMBO_TERM_SLOW 50
+#define COMBO_TERM    50
+#define COMBO_IDLE_MS 150  // letter-pair combos only fire after a short typing pause
+
+// Own combo macro so we can set require-prior-idle-ms (avoids false triggers while typing fast)
+#define MAKE_COMBO(NAME, BINDINGS, KEYPOS, LAYERS, TERM_MS, IDLE_MS) \
+    / { \
+        combos { \
+            compatible = "zmk,combos"; \
+            combo_##NAME { \
+                bindings = <BINDINGS>; \
+                key-positions = <KEYPOS>; \
+                layers = <LAYERS>; \
+                timeout-ms = <TERM_MS>; \
+                require-prior-idle-ms = <IDLE_MS>; \
+            }; \
+        }; \
+    };
 
 // left and right brace { }
-ZMK_COMBO(lbrc, &kp LBRC, RT1 RT2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(rbrc, &kp RBRC, RT2 RT3, DEF NUM, COMBO_TERM_SLOW)
+MAKE_COMBO(lbrc, &kp LBRC, RT1 RT2, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
+MAKE_COMBO(rbrc, &kp RBRC, RT2 RT3, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
 
 // left and right parenthesis ( )
-ZMK_COMBO(lpar, &kp LPAR, RM1 RM2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(rpar, &kp RPAR, RM2 RM3, DEF NUM, COMBO_TERM_SLOW)
+MAKE_COMBO(lpar, &kp LPAR, RM1 RM2, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
+MAKE_COMBO(rpar, &kp RPAR, RM2 RM3, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
 
 // left and right bracket [ ]
-ZMK_COMBO(lbkt, &kp LBKT, RB1 RB2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(rbkt, &kp RBKT, RB2 RB3, DEF NUM, COMBO_TERM_SLOW)
+MAKE_COMBO(lbkt, &kp LBKT, RB1 RB2, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
+MAKE_COMBO(rbkt, &kp RBKT, RB2 RB3, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
 
-// left and right less-then and greater-then < >
-ZMK_COMBO(lt, &kp LT, LT3 LT2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(gt, &kp GT, LT2 LT1, DEF NUM, COMBO_TERM_SLOW)
+// less-than and greater-than < >
+MAKE_COMBO(lt, &kp LT, LT3 LT2, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
+MAKE_COMBO(gt, &kp GT, LT2 LT1, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
 
-// left and right underscore and equal
-ZMK_COMBO(under, &kp UNDER, LM3 LM2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(equal, &kp EQUAL, LM2 LM1, DEF NUM, COMBO_TERM_SLOW)
+// underscore and equal
+MAKE_COMBO(under, &kp UNDER, LM3 LM2, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
+MAKE_COMBO(equal, &kp EQUAL, LM2 LM1, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
 
-// left and right minus and plus
-ZMK_COMBO(minus, &kp MINUS, LB3 LB2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(plus, &kp PLUS, LB2 LB1, DEF NUM, COMBO_TERM_SLOW)
+// minus and plus
+MAKE_COMBO(minus, &kp MINUS, LB3 LB2, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
+MAKE_COMBO(plus,  &kp PLUS,  LB2 LB1, BASE_LAYERS, COMBO_TERM, COMBO_IDLE_MS)
 
-// copy and past
-// ZMK_COMBO(copy, &kp LC(C), LM2 LB2, DEF NUM, COMBO_TERM_SLOW)
-// ZMK_COMBO(paste, &kp LC(V), LM1 LB1, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(copy, &kp LC(C), LM2 LT2, DEF NUM, COMBO_TERM_SLOW)
-ZMK_COMBO(paste, &kp LC(V), LM1 LT1, DEF NUM, COMBO_TERM_SLOW)
+// apostrophe on H+J (never typed together in English, so no idle guard needed:
+// it must work mid-word, e.g. don't)
+MAKE_COMBO(squot, &kp SINGLE_QUOTE, RM0 RM1, BASE_LAYERS, COMBO_TERM, 0)
+
+// caps word on both index-finger home keys (F + J)
+MAKE_COMBO(capsword, &caps_word, LM3 RM1, BASE_LAYERS, COMBO_TERM, 0)
+
+// editing combos: Ctrl on Linux (DEF), Cmd on macOS (MAC)
+#define MAKE_EDIT_COMBO(NAME, KEY, POS) \
+    MAKE_COMBO(NAME, &kp LC(KEY), POS, DEF, COMBO_TERM, 0) \
+    MAKE_COMBO(NAME##_mac, &kp LG(KEY), POS, MAC, COMBO_TERM, 0)
+
+MAKE_EDIT_COMBO(copy,  C, LM2 LT2)  // D + E
+MAKE_EDIT_COMBO(paste, V, LM1 LT1)  // S + W
+MAKE_EDIT_COMBO(cut,   X, LM1 LB1)  // S + X
+MAKE_EDIT_COMBO(undo,  Z, LM0 LB0)  // A + Z
 
 // ----------- KEYMAP -----------
 
@@ -83,8 +103,19 @@ ZMK_COMBO(paste, &kp LC(V), LM1 LT1, DEF NUM, COMBO_TERM_SLOW)
         bindings = <BINDING1>, <BINDING2>; \
     )
 
-// tap: space | shift + tap: tab | hold: Num layer
-MAKE_SIMPLE_MORPH(spc_tab_num, SFT, &lt NUM SPACE, &kp TAB)
+// tap: space | shift + tap: tab
+MAKE_SIMPLE_MORPH(spc_tab, SFT, &kp SPACE, &kp TAB)
+
+// Hold: layer | Tap: custom behavior (mod-morph)
+#define MAKE_LT_MORPH(NAME, TAP_BEHAVIOR) \
+    ZMK_HOLD_TAP(NAME, \
+        flavor = "balanced"; \
+        tapping-term-ms = <200>; \
+        quick-tap-ms = <QUICK_TAP_MS>; \
+        bindings = <&mo>, <TAP_BEHAVIOR>; \
+    )
+
+MAKE_LT_MORPH(lt_num_spctab, &spc_tab)
 
 // tap: semicolon | shift + tap: colon
 MAKE_SIMPLE_MORPH(semi_colon, SFT, &kp SEMI, &kp COLON)
@@ -149,27 +180,27 @@ ZMK_LAYER(Qwerty,
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
         &kp Z        &kp X         &kp C         &kp V         &kp B             &kp N         &kp M       &comma_dquot   &dot_squot   &slash_qmark
 // ╰─────────────┴─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┴─────────────╯
-                            &mod_esctil LGUI 0 &mt LCTRL TAB &spc_tab_num      &lt NAV BSPC &mt RSHFT ENTER &mod_delcaps RALT 0
+                            &mod_esctil LGUI 0 &mt LCTRL TAB &lt_num_spctab NUM 0      &lt NAV BSPC &mt RSHFT ENTER &mod_delcaps RALT 0
 //                             ╰─────────────┴─────────────┴─────────────╯   ╰─────────────┴─────────────┴─────────────╯
 )
 
 ZMK_LAYER(Numpad,
 // ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮   ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮
-      &kp GRAVE      &kp TILDE     &kp AT       &kp CARET     &kp PLUS          &kp STAR       &kp N7        &kp N8        &kp N9       &kp MINUS
+        &kp EXCL      &kp AT        &kp HASH     &kp DLLR       &kp PRCNT       &kp CARET      &kp AMPS     &kp KP_MULTIPLY &kp LPAR    &kp RPAR
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-  &hml LALT DLLR &hml LGUI AMPS &hml LCTRL EQUAL &hml LSHFT STAR &kp PIPE       &kp PLUS       &kp N4        &kp N5        &kp N6       &kp SLASH
+    &hml LALT N1  &hml LGUI N2  &hml LCTRL N3 &hml LSHFT N4     &kp N5          &kp N6      &hmr RSHFT N7 &hmr RCTRL N8  &hmr RGUI N9  &hmr LALT N0
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-      &kp PRCNT       &kp EXCL     &kp LT       &kp GT        &kp HASH          &kp EQUAL      &kp N1        &kp N2        &kp N3     &kp BACKSLASH
+        &kp GRAVE     &kp TILDE   &kp MINUS     &kp EQUAL     &kp UNDER         &kp PLUS       &kp LT         &kp GT     &kp BACKSLASH   &kp PIPE 
 // ╰─────────────┴─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┴─────────────╯
-                                  &kp LPAR      &kp RPAR         ___               ___         &kp N0          ___
+                                     ___           ___           ___               ___           ___          ___
 //                             ╰─────────────┴─────────────┴─────────────╯   ╰─────────────┴─────────────┴─────────────╯
 )
 
 ZMK_LAYER(Nav,
 // ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮   ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮
-       XXX          XXX             XXX            XXX          XXX            &kp C_VOL_UP    &kp HOME       &kp UP       &kp END      &kp PG_UP
+       &kp ESC     &kp LC(PG_UP) &kp LC(PG_DN)     XXX          XXX            &kp C_VOL_UP    &kp HOME       &kp UP       &kp END      &kp PG_UP
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-      &kp LALT      &kp LGUI      &kp LCTRL     &kp LSHFT       XXX            &kp C_VOL_DN    &kp LEFT       &kp DOWN     &kp RIGHT    &kp PG_DN
+      &kp LALT      &kp LGUI      &kp LCTRL     &kp LSHFT  &key_repeat         &kp C_VOL_DN    &kp LEFT       &kp DOWN     &kp RIGHT    &kp PG_DN
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
        XXX          XXX             XXX            XXX          XXX            &kp K_MUTE      &kp C_PP      &kp C_PREV    &kp C_NEXT      XXX          
 // ╰─────────────┴─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┴─────────────╯
@@ -179,11 +210,25 @@ ZMK_LAYER(Nav,
 
 ZMK_LAYER(System,
 // ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮   ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮
-        &boot          XXX          XXX            XXX           XXX          &kp C_BRI_INC    &kp F7         &kp F8       &kp F9        &kp F12
+    &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4      &kp C_BRI_INC    &kp F7         &kp F8       &kp F9        &kp F12
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-     &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4     &kp C_BRI_DEC    &kp F4         &kp F5       &kp F6        &kp F11
+        &kp LALT      &kp LGUI      &kp LCTRL     &kp LSHFT       XXX         &kp C_BRI_DEC    &kp F4         &kp F5       &kp F6        &kp F11
 // ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-     &bt BT_CLR        XXX          XXX            XXX           XXX               XXX         &kp F1         &kp F2       &kp F3      &kp F10
+     &bt BT_CLR       &boot       &tog MAC          XXX           XXX               XXX         &kp F1         &kp F2       &kp F3      &kp F10
+// ╰─────────────┴─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┴─────────────╯
+                                     ___           ___           ___               ___           ___           ___
+//                             ╰─────────────┴─────────────┴─────────────╯   ╰─────────────┴─────────────┴─────────────╯
+)
+
+// Empty layer: toggled from the System layer. Its only job is to make the
+// editing combos send Cmd instead of Ctrl (see MAKE_EDIT_COMBO).
+ZMK_LAYER(Mac,
+// ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮   ╭─────────────┬─────────────┬─────────────┬─────────────┬─────────────╮
+        ___           ___           ___           ___           ___               ___           ___           ___           ___           ___
+// ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
+        ___           ___           ___           ___           ___               ___           ___           ___           ___           ___
+// ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
+        ___           ___           ___           ___           ___               ___           ___           ___           ___           ___
 // ╰─────────────┴─────────────┼─────────────┼─────────────┼─────────────┤   ├─────────────┼─────────────┼─────────────┼─────────────┴─────────────╯
                                      ___           ___           ___               ___           ___           ___
 //                             ╰─────────────┴─────────────┴─────────────╯   ╰─────────────┴─────────────┴─────────────╯
